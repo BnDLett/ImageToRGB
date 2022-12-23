@@ -1,67 +1,49 @@
-from PIL import Image
 import time
+from typing import Dict, List
 
-def convertToRGB(fileToConvert, showDuration: bool=False):
-    im = Image.open(fileToConvert) # Opens and loads the image.
-    pix = im.load() 
+from PIL import Image
 
-    rgbValues = {} # Sets the RGB value list.
-    rgbValuesTemp = []
+def convert_to_rgb(file_to_convert: str, show_duration: bool = False) -> Dict[str, List[str]]:
+    im = Image.open(file_to_convert)  # Opens and loads the image.
+    pix = im.load()
 
-    x = time.time()
-    rgbValues['metadata'] = str(im.size)
-    for i in range(im.size[1]): # Vertical loop.
-        for z in range(im.size[0]): # Horizontal loop.
-            rgbValuesTemp.append(str(pix[z, i])) # Append the RGB value for the pixel to a list.
+    rgb_values: Dict[str, List[str]] = {}  # Sets the RGB value list.
+    rgb_values_temp: List[str] = []
 
-    rgbValues['rgbValues'] = list(rgbValuesTemp)
+    start_time = time.time()  # Start timer.
+    metadata = str(im.size)
+    
+    for i in range(im.size[1]):  # Vertical loop.
+        for z in range(im.size[0]):  # Horizontal loop.
+            rgb_values_temp.append(str(pix[z, i]))  # Append the RGB value for the pixel to a list.
 
-    if showDuration:
-        print(f"{(time.time()-x)*1000} ms") # Shows duration.
+    rgb_values['metadata'] = metadata
+    rgb_values['rgbValues'] = rgb_values_temp
 
-    return rgbValues
+    if show_duration:
+        print(f"Duration: {(time.time() - start_time) * 1000:.2f} ms")  # Shows duration.
 
-def convertToImage(fileToConvert: str=None, showDuration: bool=False):
-    if fileToConvert is None:
-        return None
-    x = open(fileToConvert, 'r') # Opens, reads and evaluates the file to be converted.
-    fileToConvert = x.read()
-    rgbData = eval(fileToConvert)
+    return rgb_values
 
-    metadata = list(eval(rgbData['metadata'])) # Likely is a better method than this. Obtains the metadata of the image.
-    im = Image.new(size=tuple(metadata), mode='RGB') # Makes a new image, with the same size as the metadata.
-    z = 0
-    startTime = time.time() # Starts timer.
+def convert_to_image(file_to_convert: str, show_duration: bool = False) -> None:
+    with open(file_to_convert, 'r') as f:  # Opens and reads the file to be converted.
+        rgb_data = eval(f.read())
+
+    metadata = list(eval(rgb_data['metadata']))  # Obtains the metadata of the image.
+    im = Image.new(size=tuple(metadata), mode='RGB')  # Makes a new image, with the same size as the metadata.
+    start_time = time.time()  # Start timer.
+    
     for i in range(metadata[1]):
         for y in range(metadata[0]):
-            rgbValue = eval(rgbData['rgbValues'][z]) # Evaluates the RGB value for given pixel.
-            im.putpixel((y, i), rgbValue) # Puts the evaluated RGB value on to the given pixel.
-            z += 1
-    if showDuration:
-        print(f"{(time.time()-startTime)*1000} ms") # Shows duration if told to do so.
-    im.save("convertedImage.png", format="png") # Saves the converted image.
-    x.close()
+            rgb_value = eval(rgb_data['rgbValues'][i * metadata[0] + y])  # Evaluates the RGB value for given pixel.
+            im.putpixel((y, i), rgb_value)  # Puts the evaluated RGB value on to the given pixel.
+    if show_duration:
+        print(f"Duration: {(time.time() - start_time) * 1000:.2f} ms")  # Shows duration if told to do so.
+    im.save("converted_image.png", format="png")  # Saves the converted image.
 
-def inputs(stringToBeAdded: str=None):
-    fileToConvert = input(f"{stringToBeAdded}\n> ") # Input file to be converted and an additional option.
-    showDuration = input("Would you like to see the duration taken? (\"True\" or \"False\")\n> ")
+def inputs(string_to_be_added: str = None) -> Tuple[str, bool]:
+    file_to_convert = input(f"{string_to_be_added}\n> ")  # Input file to be converted.
+    show_duration = input("Would you like to see the duration taken? (\"True\" or \"False\")\n> ")
 
-    if "False" != showDuration and "True" != showDuration: # Ensures the entered value is a boolean.
-        raise Exception("Entered value is not a boolean.")
-    
-    valueList = [fileToConvert, showDuration]
-    return valueList
-
-if __name__ == "__main__":
-    while True:
-        optionalMode = input("Please input a mode. Either \"To RGB\" or \"To image\"\n> ") # Gets input for the mode.
-        if optionalMode.lower() == "to image":
-            values = inputs("Please enter the RGB data path and name.") # Gets input from the input function.
-            convertToImage(values[0], values[1]) # Calls the image conversion function.
-            continue
-
-        values = inputs("Please enter the image path and name.") # Gets input from the input function.
-        rgbValues = convertToRGB(values[0], eval(values[1])) # Runs the convertToRGB function.
-
-        with open('rgbValues.txt', 'w') as file: # Opens and writes rgbValues to a file.
-            file.write(str(rgbValues))
+    if show_duration.lower() not in ["true", "false"]:  # Ensures the entered value is a boolean.
+        raise ValueError("Entered value is not
